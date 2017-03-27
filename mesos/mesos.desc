@@ -1,0 +1,6 @@
+# Mesos feature will install mesos plugins (and dependencies), the mesos.groovy and mesos library.
+#
+# MAINTAINER: clarsonneur@gmail.com
+plugin:mesos:0.12.0
+groovy:mesos
+shell:install_mesos_lib.sh
