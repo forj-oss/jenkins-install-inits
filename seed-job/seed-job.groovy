@@ -20,7 +20,10 @@ def env = System.getenv()
 seed_jobs_repo = env['SEED_JOBS_REPO']
 git_password = env['GIT_PASSWORD']
 git_username = env['GIT_USERNAME']
-job_dsl_path = env['JOB_DSL_PATH']
+
+// A new line seperated list of dsl scripts, located in the workspace.
+// Can use wildcards...and will be defaulted to jobs/**/*.groovy.
+build_dsl_scripts = env['BUILD_DSL_SCRIPTS']
 
 if(seed_jobs_repo) {
   def credential_id
@@ -49,7 +52,7 @@ if(seed_jobs_repo) {
          )
 
        if (existing_credentials == null) {
-          existing_credentials = new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, 'github', 'GitHub pull request integration', 
+          existing_credentials = new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, 'github', 'GitHub pull request integration',
                                                                   git_username, git_password)
           global_domain = Domain.global()
           credentials_store =
@@ -78,19 +81,21 @@ if(seed_jobs_repo) {
       null,
       null)
 
-    if (!job_dsl_path) {
-       job_dsl_path = "jobs_dsl/**"
-       println("== seed-job.groovy --> JOB_DSL_PATH not set. Using '" + job_dsl_path + "' as default")
+    if (!build_dsl_scripts) {
+       build_dsl_scripts = "jobs_dsl/**/*.groovy"
+       println("== seed-job.groovy --> BUILD_DSL_SCRIPTS not set. Using '" + build_dsl_scripts + "' as default")
     }
-    else 
-       println("== seed-job.groovy --> Using '" + job_dsl_path + "' as Job DSL path.")
+    else
+       println("== seed-job.groovy --> Using '" + build_dsl_scripts + "' as build dsl scripts.")
 
-    scm.getExtensions().add(new PathRestriction(job_dsl_path + "/*.*",""))
     seedJob.scm = scm
 
-    def scriptLocation = new ExecuteDslScripts.ScriptLocation("false", job_dsl_path + "/*.groovy", null)
-    seedJob.buildersList.add(new ExecuteDslScripts(scriptLocation, false, RemovedJobAction.DELETE, RemovedViewAction.DELETE, LookupStrategy.JENKINS_ROOT))
-    
+    def scriptLocation = new ExecuteDslScripts()
+    scriptLocation.setTargets(build_dsl_scripts)
+    scriptLocation.setRemovedJobAction(RemovedJobAction.DISABLE)
+    scriptLocation.setRemovedViewAction(RemovedViewAction.DELETE)
+    scriptLocation.setLookupStrategy(LookupStrategy.JENKINS_ROOT)
+    seedJob.buildersList.add(scriptLocation)
     println("== seed-job.groovy --> 'seed-job' configured. ")
 
     seedJob.save()
