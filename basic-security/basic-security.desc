@@ -1,1 +1,5 @@
 groovy:basic-security
+plugin:matrix-auth
+plugin:matrix-project
+# Jenkins >=2.7.3
+plugin:script-security
