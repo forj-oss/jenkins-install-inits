@@ -1,3 +1,4 @@
 plugin:github-branch-source:2.2.3
 plugin:github-api:1.89
 plugin:github:1.28.0
+groovy:user-password-credentials
