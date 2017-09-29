@@ -16,14 +16,31 @@ import com.cloudbees.plugins.credentials.domains.*
 import com.cloudbees.plugins.credentials.common.*
 import com.cloudbees.jenkins.plugins.sshcredentials.impl.*
 
+import net.sf.json.JSONObject
+
 def env = System.getenv()
 seed_jobs_repo = env['SEED_JOBS_REPO']
 git_password = env['GIT_PASSWORD']
 git_username = env['GIT_USERNAME']
 
-// A new line seperated list of dsl scripts, located in the workspace.
+jobdsl_security = env['JOB_DSL_SCRIPT_SECURITY']
+
+// A new line separated list of dsl scripts, located in the workspace.
 // Can use wildcards...and will be defaulted to jobs/**/*.groovy.
 build_dsl_scripts = env['BUILD_DSL_SCRIPTS']
+
+println("== seed-job.groovy --> JOB_DSL_SCRIPT_SECURITY is set to '" + jobdsl_security + "'")
+config = Jenkins.instance.getDescriptorByType(GlobalJobDslSecurityConfiguration)
+
+JSONObject json = new JSONObject()
+if (jobdsl_security && jobdsl_security == "true") {
+    json.put('useScriptSecurity', '')
+    config.configure(null, json)
+    println("== seed-job.groovy --> Global JobDsl Security is on. Jenkins Administrators are required to approve/deny.")
+} else {
+    config.configure(null, json)
+    println("== seed-job.groovy --> Global JobDsl Security is off. All jobs dsl are by default approved.")
+}
 
 if(seed_jobs_repo) {
   def credential_id
@@ -104,3 +121,4 @@ if(seed_jobs_repo) {
 }
 else
   println("== seed-job.groovy --> Missing SEED_JOBS_REPO, GIT_USERNAME, GIT_PASSWORD. 'seed-job' initial project NOT verified.")
+
