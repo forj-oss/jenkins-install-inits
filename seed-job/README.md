@@ -3,10 +3,11 @@
 This script will initialize your first seed job and execute it.
 It currently requires following parameters (environment variables)
 
-- `SEED_JOBS_REPO`    : Required. GIT url.
-- `GIT_PASSWORD`      : Optional. Password required to access the GIT repo.
-- `GIT_USERNAME`      : Optional. Username required to acces the GIT repo.
-- `BUILD_DSL_SCRIPTS` : Optional. Job DSL collection of groovy scripts to generate/maintain your jobs. By default, it is set to `jobs_dsl/**/*.groovy`
+- `SEED_JOBS_REPO`          : Required. GIT url.
+- `GIT_PASSWORD`            : Optional. Password required to access the GIT repo.
+- `GIT_USERNAME`            : Optional. Username required to acces the GIT repo.
+- `BUILD_DSL_SCRIPTS`       : Optional. Job DSL collection of groovy scripts to generate/maintain your jobs. By default, it is set to `jobs_dsl/**/*.groovy`
+- `JOB_DSL_SCRIPT_SECURITY` : Optional. By default, script security is off. set 'true' to enable it.
 
 It has been designed to do the following:
 
@@ -22,11 +23,11 @@ If you need to re-use the created/updated credential used by the seedjob in your
 
 Ex:
 
-    Job('vnfm_pull_request') {
+    Job('project_pull_request') {
        scm {
           git {
              remote {
-                url('https://github.hpe.com/vnfm/manager')
+                url('https://github.com/owner/project')
                 credentials('github') # Use the credential ID 'github' created/maintained by seed-job.groovy
              }
           }
