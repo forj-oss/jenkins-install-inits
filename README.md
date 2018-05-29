@@ -39,7 +39,7 @@ Code example:
 
 - Call jenkins-install.sh with your file
 
-## About `jenkins_features.lst`
+## About `jenkins_features.lst`Where is the Controller box? Do we have one?
 
 Each line prefixed by `feature:` or `plugin:` will describe an installation task
 
