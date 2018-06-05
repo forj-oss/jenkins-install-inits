@@ -22,6 +22,16 @@ def env = System.getenv()
 seed_jobs_repo = env['SEED_JOBS_REPO']
 git_password = env['GIT_PASSWORD']
 git_username = env['GIT_USERNAME']
+seedJobs_password = env['SEED_JOBS_PASSWORD']
+seedJobs_username = env['SEED_JOBS_USERNAME']
+
+if ((git_password || git_username) && (!seedJobs_password && !seedJobs_username)) {
+  println("== seed-job.groovy --> GIT_USERNAME or GIT_PASSWORD is obsolete. Use SEED_JOBS_USERNAME and SEED_JOBS_PASSWORD instead.")
+} else {
+  git_password = seedJobs_password
+  git_username = seedJobs_username
+}
+
 
 jobdsl_security = env['JOB_DSL_SCRIPT_SECURITY']
 
@@ -45,8 +55,8 @@ if (jobdsl_security && jobdsl_security == "true") {
 def credential_id
 
 if (git_username && git_password) {
-  println("== seed-job.groovy --> GIT_USERNAME is set to '" + git_username + "'")
-  println("== seed-job.groovy --> GIT_PASSWORD is set to '***'")
+  println("== seed-job.groovy --> SEED_JOBS_USERNAME is set to '" + git_username + "'")
+  println("== seed-job.groovy --> SEED_JOBS_PASSWORD is set to '***'")
 
   def seedJobId = 'seedjob-github'
 
@@ -144,7 +154,7 @@ if(seed_jobs_repo) {
       println("== seed-job.groovy --> BUILD_DSL_SCRIPTS not set. Using '" + build_dsl_scripts + "' as default")
   }
   else 
-      println("== seed-job.groovy --> Using '" + build_dsl_scripts + "' as build dsl scripts.")
+      println("== seed-job.groovy --> BUILD_DSL_SCRIPTS is set to '" + build_dsl_scripts + "'. Use it as build dsl scripts.")
 
   if (seedJob.buildersList.size() > 1) {
     seedJob.buildersList.clear()
@@ -189,5 +199,5 @@ if(seed_jobs_repo) {
   println("== seed-job.groovy --> '" + seedJobName + "' scheduled. ")
 }
 else
-  println("== seed-job.groovy --> Missing SEED_JOBS_REPO, GIT_USERNAME, GIT_PASSWORD. 'seed-job' initial project NOT verified.")
+  println("== seed-job.groovy --> Missing SEED_JOBS_REPO, SEED_JOBS_USERNAME, SEED_JOBS_PASSWORD. 'seed-job' initial project NOT verified.")
 
