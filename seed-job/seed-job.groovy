@@ -22,6 +22,16 @@ def env = System.getenv()
 seed_jobs_repo = env['SEED_JOBS_REPO']
 git_password = env['GIT_PASSWORD']
 git_username = env['GIT_USERNAME']
+seedJobs_password = env['SEED_JOBS_PASSWORD']
+seedJobs_username = env['SEED_JOBS_USERNAME']
+
+if ((git_password || git_username) && (!seedJobs_password && !seedJobs_username)) {
+  println("== seed-job.groovy --> GIT_USERNAME or GIT_PASSWORD is obsolete. Use SEED_JOBS_USERNAME and SEED_JOBS_PASSWORD instead.")
+} else {
+  git_password = seedJobs_password
+  git_username = seedJobs_username
+}
+
 
 jobdsl_security = env['JOB_DSL_SCRIPT_SECURITY']
 
@@ -34,62 +44,97 @@ config = Jenkins.instance.getDescriptorByType(GlobalJobDslSecurityConfiguration)
 
 JSONObject json = new JSONObject()
 if (jobdsl_security && jobdsl_security == "true") {
-    json.put('useScriptSecurity', '')
-    config.configure(null, json)
-    println("== seed-job.groovy --> Global JobDsl Security is on. Jenkins Administrators are required to approve/deny.")
+  json.put('useScriptSecurity', '')
+  config.configure(null, json)
+  println("== seed-job.groovy --> Global JobDsl Security is on. Jenkins Administrators are required to approve/deny.")
 } else {
-    config.configure(null, json)
-    println("== seed-job.groovy --> Global JobDsl Security is off. All jobs dsl are by default approved.")
+  config.configure(null, json)
+  println("== seed-job.groovy --> Global JobDsl Security is off. All jobs dsl are by default approved.")
 }
 
+def credential_id
+
+if (git_username && git_password) {
+  println("== seed-job.groovy --> SEED_JOBS_USERNAME is set to '" + git_username + "'")
+  println("== seed-job.groovy --> SEED_JOBS_PASSWORD is set to '***'")
+
+  def seedJobId = 'seedjob-github'
+
+  newCredential = new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, seedJobId, 'seedJob user/token (github)', git_username, git_password)
+
+  username_matcher = CredentialsMatchers.withUsername(git_username)
+  available_credentials = 
+    CredentialsProvider.lookupCredentials(
+    StandardUsernameCredentials.class,
+    Jenkins.getInstance(),
+    hudson.security.ACL.SYSTEM,
+    new SchemeRequirement("ssh")
+  )
+
+  existing_credentials =
+    CredentialsMatchers.firstOrNull(
+      available_credentials,
+      username_matcher
+    )
+
+    global_domain = Domain.global()
+    credentials_store = Jenkins.instance.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
+
+  if (existing_credentials == null) {
+    credentials_store.addCredentials(global_domain, newCredentials)
+
+    println("== seed-job.groovy --> '" + seedJobId + "' credential added.")
+  } else {
+    credentials_store.updateCredentials(global_domain, existing_credentials, newCredential)
+
+    println("== seed-job.groovy --> '" + seedJobId + "' credential updated.")
+  }
+  // else // TODO: Reset the password of the credential from what is passed.
+  credential_id = existing_credentials.id
+}
+else {
+    println("== seed-job.groovy --> No credential to create/maintain as GIT_USERNAME or GIT_PASSWORD not set.")
+    //existing_credentials.getPassword()
+}
+
+def seedJobName = "seed-job"
+
 if(seed_jobs_repo) {
-  def credential_id
-
   println("== seed-job.groovy --> SEED_JOBS_REPO is set to '" + seed_jobs_repo + "'")
-  if(!Jenkins.instance.getItemMap().containsKey("seed-job")) {
-    def seedJob = Jenkins.instance.createProject(FreeStyleProject.class, "seed-job")
-    println("== seed-job.groovy --> FreestyleProject 'seed-job' created.")
 
-    if (git_username && git_password) {
-       println("== seed-job.groovy --> GIT_USERNAME is set to '" + git_username + "'")
-       println("== seed-job.groovy --> GIT_PASSWORD is set to '***'")
-       username_matcher = CredentialsMatchers.withUsername(git_username)
-       available_credentials =
-         CredentialsProvider.lookupCredentials(
-           StandardUsernameCredentials.class,
-           Jenkins.getInstance(),
-           hudson.security.ACL.SYSTEM,
-           new SchemeRequirement("ssh")
-         )
+  // Check or create project
+  def seedJob = Jenkins.instance.getItem(seedJobName)
+  if(!Jenkins.instance.getItemMap().containsKey(seedJobName) || !seedJob instanceof FreeStyleProject ) {
+    seedJob = Jenkins.instance.createProject(FreeStyleProject.class, seedJobName)
+    println("== seed-job.groovy --> FreestyleProject '"+ seedJobName +"' created.")
+  } else {
+    println("== seed-job.groovy --> FreestyleProject '"+ seedJobName +"' already exist. Checking...")
+  }
 
-       existing_credentials =
-         CredentialsMatchers.firstOrNull(
-           available_credentials,
-           username_matcher
-         )
+  // Check or create SCM config
+  def scm 
 
-       if (existing_credentials == null) {
-          existing_credentials = new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, 'github', 'GitHub pull request integration',
-                                                                  git_username, git_password)
-          global_domain = Domain.global()
-          credentials_store =
-          Jenkins.instance.getExtensionList(
-               'com.cloudbees.plugins.credentials.SystemCredentialsProvider'
-             )[0].getStore()
-          credentials_store.addCredentials(global_domain, existing_credentials)
-          println("== seed-job.groovy --> 'github' credential added ")
+  if (seedJob.scm instanceof GitSCM) {
+    scm = seedJob.scm
+    def scmConfigs = scm.getUserRemoteConfigs()
+    if (scmConfigs.size() != 1) {
+      scm = null
+      println("== seed-job.groovy --> GitSCM.UserRemoteConfig has changed. Too many repositories.")
+    } else {
+      def userRemoteConfig = scmConfigs[0]
+      if (userRemoteConfig.getUrl() != seed_jobs_repo || userRemoteConfig.getCredentialsId() != credential_id ) {
+        scm = null
+        println("== seed-job.groovy --> GitSCM.UserRemoteConfig has changed. repo url and/or credential-id updated.")
+      } else {
+        println("== seed-job.groovy --> No update on GitSCM.UserRemoteConfig.")
       }
-      // else // TODO: Reset the password of the credential from what is passed.
-      credential_id = existing_credentials.id
     }
-    else {
-       println("== seed-job.groovy --> No credential to create/maintain as GIT_USERNAME or GIT_PASSWORD not set.")
-       //existing_credentials.getPassword()
-    }
-
+  } 
+  
+  if ( !scm ) {
     def userRemoteConfig = new UserRemoteConfig(seed_jobs_repo, null, null, credential_id)
 
-    def scm = new GitSCM(
+    scm = new GitSCM(
       Collections.singletonList(userRemoteConfig),
       Collections.singletonList(new BranchSpec("master")),
       false,
@@ -98,27 +143,61 @@ if(seed_jobs_repo) {
       null,
       null)
 
-    if (!build_dsl_scripts) {
-       build_dsl_scripts = "jobs_dsl/**/*.groovy"
-       println("== seed-job.groovy --> BUILD_DSL_SCRIPTS not set. Using '" + build_dsl_scripts + "' as default")
-    }
-    else
-       println("== seed-job.groovy --> Using '" + build_dsl_scripts + "' as build dsl scripts.")
-
     seedJob.scm = scm
+    println("== seed-job.groovy --> Set GitSCM to '" + seedJobName + "'.")
+  } else {
+    println("== seed-job.groovy --> No update on GitSCM.")
+  }
+      
+  if (!build_dsl_scripts) {
+      build_dsl_scripts = "jobs_dsl/**/*.groovy"
+      println("== seed-job.groovy --> BUILD_DSL_SCRIPTS not set. Using '" + build_dsl_scripts + "' as default")
+  }
+  else 
+      println("== seed-job.groovy --> BUILD_DSL_SCRIPTS is set to '" + build_dsl_scripts + "'. Use it as build dsl scripts.")
 
-    def scriptLocation = new ExecuteDslScripts()
+  if (seedJob.buildersList.size() > 1) {
+    seedJob.buildersList.clear()
+    println("== seed-job.groovy --> Too many builders. Recreate it.")
+  }
+
+  def scriptLocation
+  if (seedJob.buildersList.size() == 1 && seedJob.buildersList[0] instanceof ExecuteDslScripts) {
+    scriptLocation = seedJob.buildersList[0]
+    def updated = false
+    if (scriptLocation.getTargets() != build_dsl_scripts) {
+      scriptLocation.setTargets(build_dsl_scripts)
+      updated = true
+    }
+    if (scriptLocation.getRemovedJobAction() != RemovedJobAction.DISABLE) {
+      scriptLocation.setRemovedJobAction(RemovedJobAction.DISABLE)
+      updated = true
+    }
+
+    if (scriptLocation.getRemovedViewAction() != RemovedViewAction.DELETE) {
+      scriptLocation.setRemovedViewAction(RemovedViewAction.DELETE)
+      updated = true
+    }
+
+    if (scriptLocation.getLookupStrategy() != LookupStrategy.JENKINS_ROOT) {
+      scriptLocation.setLookupStrategy(LookupStrategy.JENKINS_ROOT)
+    }
+    if (updated)
+      println("== seed-job.groovy --> builder JobDSL updated to '" + seedJobName + "'.")
+  } else {
+    scriptLocation = new ExecuteDslScripts()
     scriptLocation.setTargets(build_dsl_scripts)
     scriptLocation.setRemovedJobAction(RemovedJobAction.DISABLE)
     scriptLocation.setRemovedViewAction(RemovedViewAction.DELETE)
     scriptLocation.setLookupStrategy(LookupStrategy.JENKINS_ROOT)
     seedJob.buildersList.add(scriptLocation)
-    println("== seed-job.groovy --> 'seed-job' configured. ")
-
-    seedJob.save()
-    seedJob.scheduleBuild(new Cause.UserIdCause())
+    println("== seed-job.groovy --> builder JobDSL added to '" + seedJobName + "'. ")
   }
+
+  seedJob.save()
+  seedJob.scheduleBuild(new Cause.UserIdCause())
+  println("== seed-job.groovy --> '" + seedJobName + "' scheduled. ")
 }
 else
-  println("== seed-job.groovy --> Missing SEED_JOBS_REPO, GIT_USERNAME, GIT_PASSWORD. 'seed-job' initial project NOT verified.")
+  println("== seed-job.groovy --> Missing SEED_JOBS_REPO, SEED_JOBS_USERNAME, SEED_JOBS_PASSWORD. 'seed-job' initial project NOT verified.")
 
