@@ -1,0 +1,50 @@
+[
+    {
+        "cloudType": "amazonEC2Cloud",
+        "useInstanceProfileForCredentials": "",
+        "cloudName": "myCloud",
+        "credentialsId": "",
+        "region": "",
+        "privateKey": "file path",
+        "instanceCapStr": "",
+        "slavesTemplate": [
+            {
+                "ami": "",
+                "associatePublicIp": false,
+                "connectBySSHProcess": true,
+                "connectUsingPublicIp": false,
+                "customDeviceMapping": "/dev/sda1=:500",
+                "deleteRootOnTermination": true,
+                "description": "Ubuntu 16.04",
+                "ebsOptimized": false,
+                "iamInstanceProfil": "arn:aws:iam::890403726045:instance-profile/Jenkins_Master_On_Dev",
+                "idleTerminationMinutes": "5",
+                "initScript": [
+                    "export TERM=xterm",
+                    "sudo apt-get install -y curl unzip wget",
+                    "sudo echo \"* * * * 7 root docker system prune -f\" >> /etc/crontab"
+                ],
+                "instanceCapStr": "",
+                "jvmopts": "-Xmx3g",
+                "labelString": "",
+                "launchTimeoutStr": "",
+                "numExecutors": "5",
+                "remoteAdmin": "ubuntu",
+                "remoteFS": "/home/ubuntu",
+                "securityGroups": "Jenkins Linux Slave", //"sg-c06a56a8",
+                "stopOnTerminate": false,
+                "subnetId": "subnet-dd0b9990",
+                "tags": {
+                    "group": "DevOps"
+                },
+                "tmpDir": "",
+                "type": "t2.medium",
+                "useDedicatedTenancy": false,
+                "useEphemeralDevices": false,
+                "usePrivateDnsName": false,
+                "userData": "",
+                "zone": ""
+            }
+        ]
+    }
+]
