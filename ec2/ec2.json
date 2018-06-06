@@ -1,11 +1,10 @@
 [
     {
         "cloudType": "amazonEC2Cloud",
-        "useInstanceProfileForCredentials": "",
+        "useInstanceProfileForCredentials": false,
         "cloudName": "myCloud",
-        "credentialsId": "",
+        "credentialsId": "aws-credentials",
         "region": "",
-        "privateKey": "file path",
         "instanceCapStr": "",
         "slavesTemplate": [
             {

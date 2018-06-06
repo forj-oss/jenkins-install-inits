@@ -10,7 +10,8 @@ import hudson.plugins.ec2.SlaveTemplate
 import hudson.plugins.ec2.SpotConfiguration
 import hudson.plugins.ec2.UnixData
 import jenkins.model.Jenkins
-import groovy.json.JsonSlurper()
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 
 
 def createSlaveTemplate(sconfig){
@@ -25,7 +26,7 @@ def createSlaveTemplate(sconfig){
     sconfig.labelString,
     Node.Mode.NORMAL,
     sconfig.description,
-    sconfig.initScript,
+    sconfig.initScript.join('\n'),
     sconfig.tmpDir,
     sconfig.userData,
     sconfig.numExecutors,
@@ -50,37 +51,27 @@ def createSlaveTemplate(sconfig){
   )
 }
 
-def createAmazonEC2Cloud (config, templates) {
+def createAmazonEC2Cloud (Object config, List<? extends SlaveTemplate>  templates) {
     return new AmazonEC2Cloud(
-      config.cloudName,
-      config.useInstanceProfileForCredentials,
-      config.credentialsId,
-      config.region,
-      config.privateKey, //TODO: need to retrieve the content of a file
-      config.instanceCapStr,
-      templates
+      config.cloudName,  // String
+      config.useInstanceProfileForCredentials, // Boolean
+      config.credentialsId, // String
+      config.region, // String
+      "",//System.getenv("EC2_PRIVATE_KEY").toString(), //String
+      config.instanceCapStr, //String
+      templates //List<? extends SlaveTemplate> 
       )
 }
 
-def toMap(Object obj) {
-  def map = [:]
-  def fields = obj.metaClass.getProperties().findAll { it.name != "class" }
-  fields.each {
-      def field = obj.metaClass.getProperty(obj, it.name)
-      if(field instanceof Mappable)
-          map[(it.name)] = field.toMap()
-      else
-          map[(it.name)] = field
-  }
-  return map
-}
+def createTags (Map tags){
+  println(tags)
 
-def createTags (tags){
   try {
-    Map map = toMap(tags)
+    Map map = tags
     def ec2Tags = []
-    map.each { entry ->  ec2Tags.push(new EC2Tag(entry.key, entry.value)) }
+    tags.each { entry ->  ec2Tags.push(new EC2Tag(entry.key, entry.value)) }
     
+    println(ec2Tags)
     return ec2Tags
   }
   catch (Exception ex){
@@ -97,12 +88,13 @@ def domain = Domain.global()
 
 // get credentials store
 def store = jenkins.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
-
+String AWS_ACCESS_KEY_ID = System.getenv("AWS_ACCESS_KEY_ID").toString()
+String AWS_SECRET_ACCESS_KEY = System.getenv("AWS_SECRET_ACCESS_KEY").toString()
 AWSCredentialsImpl aWSCredentialsImpl = new AWSCredentialsImpl(
   CredentialsScope.GLOBAL,
   "aws-credentials",
-  System.getenv("AWS_ACCESS_KEY_ID").toString(),
-  System.getenv("AWS_SECRET_ACCESS_KEY").toString(),
+  AWS_ACCESS_KEY_ID,
+  AWS_SECRET_ACCESS_KEY,
   "Credentials created by the ec2 groovy configuration script"
 )
 
@@ -110,35 +102,41 @@ AWSCredentialsImpl aWSCredentialsImpl = new AWSCredentialsImpl(
 store.addCredentials(domain, aWSCredentialsImpl)
 
 // Configure clouds
-def slurper = new groovy.json.JsonSlurper() //http://groovy-lang.org/json.html
-
 try {
-  def config = slurper.parse("ec2.json")
+  
+  JsonSlurper jsonSlurper = new JsonSlurper()
+  File inputFile = new File("/tmp/ec2.json")
+  def config = jsonSlurper.parseFile(inputFile, 'UTF-8')
+
+  if( !config){
+    throw new Exception("ec2.groovy : Can't parse the ec2.json file")
+  }
+
+  for(i=0; i < config.size; i++){
+    
+    switch (config[i].cloudType) {
+      case "amazonEC2Cloud": 
+        def templates = []
+
+        // read slaves configuration and set the templates array         
+        for(j=0; j < config[i].slavesTemplate.size; j++){           
+          SlaveTemplate template = createSlaveTemplate(config[i].slavesTemplate[j])
+          templates.add(template)
+        }
+
+        AmazonEC2Cloud amazonEC2Cloud = createAmazonEC2Cloud(config[i], (List<? extends SlaveTemplate>) templates)
+
+        // add cloud configuration to Jenkins
+        jenkins.clouds.add(amazonEC2Cloud)
+        break;
+      default: break
+    }
+  }
+
+  // save current Jenkins state to disk
+  jenkins.save()
 }
 catch (Exception ex){
-  println ("Can't parse the ec2.json file : " + ex.message)
-  System.exit(0)
-}
-
-for(i=0; i<config.size; i++){
-  switch (config[i].cloudType {
-    case "amazonEC2Cloud": 
-      Array templates = new Array()
-
-      // read slaves configuration and set the templates array
-      for(j=0; j<config.slavesTemplate.size; j++){   
-        SlaveTemplate template = createSlaveTemplate(config[i].slavesTemplate(j))
-        templates.push(template)
-      }
-
-      AmazonEC2Cloud amazonEC2Cloud = createAmazonEC2Cloud(config[i], templates)
-
-      // add cloud configuration to Jenkins
-      jenkins.clouds.add(amazonEC2Cloud)
-      break;
-  }
-  default: break
+  println ("ec2.groovy : " + ex.message)
 }
  
-// save current Jenkins state to disk
-jenkins.save()
