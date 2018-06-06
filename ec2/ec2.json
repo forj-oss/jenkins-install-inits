@@ -31,7 +31,7 @@
                 "numExecutors": "5",
                 "remoteAdmin": "ubuntu",
                 "remoteFS": "/home/ubuntu",
-                "securityGroups": "Jenkins Linux Slave", //"sg-c06a56a8",
+                "securityGroups": "Jenkins Linux Slave",
                 "stopOnTerminate": false,
                 "subnetId": "subnet-dd0b9990",
                 "tags": {

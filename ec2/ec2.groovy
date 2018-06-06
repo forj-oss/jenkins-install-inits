@@ -34,7 +34,7 @@ def createSlaveTemplate(sconfig){
     sconfig.jvmopts,
     sconfig.stopOnTerminate,
     sconfig.subnetId,
-    [sconfig.tags],
+    createTags(sconfig.tags),
     sconfig.idleTerminationMinutes,
     sconfig.usePrivateDnsName,
     sconfig.instanceCapStr,
@@ -62,6 +62,33 @@ def createAmazonEC2Cloud (config, templates) {
       )
 }
 
+def toMap(Object obj) {
+  def map = [:]
+  def fields = obj.metaClass.getProperties().findAll { it.name != "class" }
+  fields.each {
+      def field = obj.metaClass.getProperty(obj, it.name)
+      if(field instanceof Mappable)
+          map[(it.name)] = field.toMap()
+      else
+          map[(it.name)] = field
+  }
+  return map
+}
+
+def createTags (tags){
+  try {
+    Map map = toMap(tags)
+    def ec2Tags = []
+    map.each { entry ->  ec2Tags.push(new EC2Tag(entry.key, entry.value)) }
+    
+    return ec2Tags
+  }
+  catch (Exception ex){
+    println ("Can't process the tags : " + ex.message)
+  }
+}
+
+/////////////////////////////////////////// MAIN ///////////////////////////////////////////////
 // get Jenkins instance
 Jenkins jenkins = Jenkins.getInstance()
  
@@ -83,8 +110,15 @@ AWSCredentialsImpl aWSCredentialsImpl = new AWSCredentialsImpl(
 store.addCredentials(domain, aWSCredentialsImpl)
 
 // Configure clouds
- def slurper = new groovy.json.JsonSlurper()
- def config = slurper.parse("ec2.json")
+def slurper = new groovy.json.JsonSlurper() //http://groovy-lang.org/json.html
+
+try {
+  def config = slurper.parse("ec2.json")
+}
+catch (Exception ex){
+  println ("Can't parse the ec2.json file : " + ex.message)
+  System.exit(0)
+}
 
 for(i=0; i<config.size; i++){
   switch (config[i].cloudType {
