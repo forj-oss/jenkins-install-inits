@@ -98,9 +98,11 @@ List<EC2Tag> createTags (Map tags){
 try {
   // check aws environment variables
   String AWS_ACCESS_KEY_ID = System.getenv("AWS_ACCESS_KEY_ID")
-  assert AWS_ACCESS_KEY_ID != null : "Then env var AWS_ACCESS_KEY_ID must not be empty"
+  assert AWS_ACCESS_KEY_ID != null : "The env var AWS_ACCESS_KEY_ID must not be empty"
   String AWS_SECRET_ACCESS_KEY = System.getenv("AWS_SECRET_ACCESS_KEY")
-  assert AWS_SECRET_ACCESS_KEY != null: "Then env var AWS_SECRET_ACCESS_KEY must not be empty"
+  assert AWS_SECRET_ACCESS_KEY != null: "The env var AWS_SECRET_ACCESS_KEY must not be empty"
+  String EC2_CONFIG = System.getenv("EC2_CONFIG")
+  assert EC2_CONFIG != null : "The env var EC2_CONFIG must not be empty"
 
   // get Jenkins instance
   Jenkins jenkins = Jenkins.getInstance()
@@ -125,11 +127,11 @@ try {
 
   // configure ec2 plugins clouds
   JsonSlurper jsonSlurper = new JsonSlurper()
-  File inputFile = new File("/tmp/ec2.json")
+  File inputFile = new File(EC2_CONFIG)
   Object config = jsonSlurper.parseFile(inputFile, 'UTF-8')
 
   if( !config){
-    throw new Exception("ec2.groovy : Can't parse the ec2.json file")
+    throw new Exception("ec2.groovy : Can't parse the "+ EC2_CONFIG + " file")
   }
 
   for(i=0; i < config.size; i++){
