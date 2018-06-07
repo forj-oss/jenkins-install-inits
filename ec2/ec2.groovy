@@ -96,6 +96,7 @@ List<EC2Tag> createTags (Map tags){
 
 /////////////////////////////////////////// MAIN ///////////////////////////////////////////////
 try {
+  println('== ec2.groovy - Start ec2 configuration')
   // check aws environment variables
   String AWS_ACCESS_KEY_ID = System.getenv("AWS_ACCESS_KEY_ID")
   assert AWS_ACCESS_KEY_ID != null : "The env var AWS_ACCESS_KEY_ID must not be empty"
@@ -127,8 +128,12 @@ try {
 
   // configure ec2 plugins clouds
   JsonSlurper jsonSlurper = new JsonSlurper()
+  println('== ec2.groovy - Start read configuration file')
   File inputFile = new File(EC2_CONFIG)
+  println('== ec2.groovy - End read configuration file')
+  println('== ec2.groovy - Start parse the configuration')
   Object config = jsonSlurper.parseFile(inputFile, 'UTF-8')
+  println('== ec2.groovy - End parse the configuration')
 
   if( !config){
     throw new Exception("ec2.groovy : Can't parse the "+ EC2_CONFIG + " file")
@@ -156,6 +161,7 @@ try {
 
   // save current Jenkins state to disk
   jenkins.save()
+  println('== ec2.groovy - End ec2 configuration')
 }
 catch (Exception ex){
   println ("ec2.groovy : " + ex.message)
