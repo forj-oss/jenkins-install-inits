@@ -136,7 +136,7 @@ try {
   println('== ec2.groovy - End parse the configuration')
 
   if( !config){
-    throw new Exception("ec2.groovy : Can't parse the "+ EC2_CONFIG + " file")
+    throw new Exception("== ec2.groovy : Can't parse the "+ EC2_CONFIG + " file")
   }
 
   for(i=0; i < config.size; i++){
@@ -164,5 +164,5 @@ try {
   println('== ec2.groovy - End ec2 configuration')
 }
 catch (Exception ex){
-  println ("ec2.groovy : " + ex.message)
+  println ("== ec2.groovy : " + ex.message)
 }
