@@ -3,7 +3,6 @@
         "cloudType": "amazonEC2Cloud",
         "useInstanceProfileForCredentials": false,
         "cloudName": "myCloud",
-        "credentialsId": "aws-credentials",
         "region": "",
         "instanceCapStr": "",
         "slavesTemplate": [

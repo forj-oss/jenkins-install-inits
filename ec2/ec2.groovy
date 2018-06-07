@@ -13,8 +13,14 @@ import jenkins.model.Jenkins
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 
+/**
+* Create an ec2 slave configuration
+* @param sconfig contains the slave configuration coming from the ec2.json file
+* @return a SlaveTemplate object containing the slave configuration
+*/
+SlaveTemplate createSlaveTemplate(Object sconfig){
+  String IAM_ARN_SLAVE = System.getenv("IAM_ARN_SLAVE")
 
-def createSlaveTemplate(sconfig){
   return new SlaveTemplate(
     sconfig.ami,
     sconfig.zone,
@@ -39,7 +45,7 @@ def createSlaveTemplate(sconfig){
     sconfig.idleTerminationMinutes,
     sconfig.usePrivateDnsName,
     sconfig.instanceCapStr,
-    sconfig.iamInstanceProfile,
+    IAM_ARN_SLAVE, //sconfig.iamInstanceProfile,
     sconfig.deleteRootOnTermination,
     sconfig.useEphemeralDevices,
     sconfig.useDedicatedTenancy,
@@ -51,27 +57,36 @@ def createSlaveTemplate(sconfig){
   )
 }
 
-def createAmazonEC2Cloud (Object config, List<? extends SlaveTemplate>  templates) {
+/**
+* Create an ec2 coud configuration
+* @param config the object retrieved from the ec2.json file
+* @param templates the list of configuration associated to the cloud
+* @return an EC2 cloud configuration
+*/
+AmazonEC2Cloud createAmazonEC2Cloud (Object config, List<SlaveTemplate>  templates) {
+    String EC2_PRIVATE_KEY = System.getenv("EC2_PRIVATE_KEY")? System.getenv("EC2_PRIVATE_KEY"): ""
+
     return new AmazonEC2Cloud(
       config.cloudName,  // String
       config.useInstanceProfileForCredentials, // Boolean
-      config.credentialsId, // String
+      "ec2-aws-credentials",//config.credentialsId, // String
       config.region, // String
-      "",//System.getenv("EC2_PRIVATE_KEY").toString(), //String
+      EC2_PRIVATE_KEY, //String
       config.instanceCapStr, //String
       templates //List<? extends SlaveTemplate> 
       )
 }
 
-def createTags (Map tags){
-  println(tags)
-
+/**
+* Create a lis of ec2Tags from a Map
+* @param tags a map contaning the tag to create
+* @return List<EC2Tag> containig the tag associated to a slave
+*/
+List<EC2Tag> createTags (Map tags){
   try {
     Map map = tags
-    def ec2Tags = []
+    List<EC2Tag> ec2Tags = []
     tags.each { entry ->  ec2Tags.push(new EC2Tag(entry.key, entry.value)) }
-    
-    println(ec2Tags)
     return ec2Tags
   }
   catch (Exception ex){
@@ -80,43 +95,47 @@ def createTags (Map tags){
 }
 
 /////////////////////////////////////////// MAIN ///////////////////////////////////////////////
-// get Jenkins instance
-Jenkins jenkins = Jenkins.getInstance()
- 
-// get credentials domain
-def domain = Domain.global()
-
-// get credentials store
-def store = jenkins.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
-String AWS_ACCESS_KEY_ID = System.getenv("AWS_ACCESS_KEY_ID").toString()
-String AWS_SECRET_ACCESS_KEY = System.getenv("AWS_SECRET_ACCESS_KEY").toString()
-AWSCredentialsImpl aWSCredentialsImpl = new AWSCredentialsImpl(
-  CredentialsScope.GLOBAL,
-  "aws-credentials",
-  AWS_ACCESS_KEY_ID,
-  AWS_SECRET_ACCESS_KEY,
-  "Credentials created by the ec2 groovy configuration script"
-)
-
-// add credential to store
-store.addCredentials(domain, aWSCredentialsImpl)
-
-// Configure clouds
 try {
+  // check aws environment variables
+  String AWS_ACCESS_KEY_ID = System.getenv("AWS_ACCESS_KEY_ID")
+  assert AWS_ACCESS_KEY_ID != null : "Then env var AWS_ACCESS_KEY_ID must not be empty"
+  String AWS_SECRET_ACCESS_KEY = System.getenv("AWS_SECRET_ACCESS_KEY")
+  assert AWS_SECRET_ACCESS_KEY != null: "Then env var AWS_SECRET_ACCESS_KEY must not be empty"
+
+  // get Jenkins instance
+  Jenkins jenkins = Jenkins.getInstance()
   
+  // get credentials domain
+  Domain domain = Domain.global()
+
+  // get credentials store
+  def store = jenkins.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
+
+  // set the credentials used to access aws
+  AWSCredentialsImpl aWSCredentialsImpl = new AWSCredentialsImpl(
+    CredentialsScope.GLOBAL,
+    "ec2-aws-credentials",
+    AWS_ACCESS_KEY_ID,
+    AWS_SECRET_ACCESS_KEY,
+    "Credentials created by the ec2 groovy configuration script"
+  )
+
+  // add credentials to store
+  store.addCredentials(domain, aWSCredentialsImpl)
+
+  // configure ec2 plugins clouds
   JsonSlurper jsonSlurper = new JsonSlurper()
   File inputFile = new File("/tmp/ec2.json")
-  def config = jsonSlurper.parseFile(inputFile, 'UTF-8')
+  Object config = jsonSlurper.parseFile(inputFile, 'UTF-8')
 
   if( !config){
     throw new Exception("ec2.groovy : Can't parse the ec2.json file")
   }
 
   for(i=0; i < config.size; i++){
-    
     switch (config[i].cloudType) {
       case "amazonEC2Cloud": 
-        def templates = []
+        List<SlaveTemplate> templates = []
 
         // read slaves configuration and set the templates array         
         for(j=0; j < config[i].slavesTemplate.size; j++){           
@@ -139,4 +158,3 @@ try {
 catch (Exception ex){
   println ("ec2.groovy : " + ex.message)
 }
- 
