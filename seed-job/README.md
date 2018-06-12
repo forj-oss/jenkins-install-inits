@@ -37,4 +37,4 @@ Ex:
 
 # TODO
 - Add support for more credentials (SSH like)
-
+- password given from a more secured place and removed when imported as Jenkins credential.
