@@ -1,31 +1,14 @@
 # jenkins >= 2.7.3
 # also known as pipeline
-plugin:workflow-aggregator:2.5
-# Latest dependent versions
-plugin:pipeline-build-step:2.7
-plugin:pipeline-input-step:2.8
-plugin:pipeline-milestone-step:1.3.1
-plugin:pipeline-model-definition:1.2.9
-plugin:pipeline-model-extensions:1.2.9
-plugin:pipeline-stage-step:2.3
-plugin:pipeline-stage-view:2.10
-plugin:workflow-api:2.27
-plugin:workflow-basic-steps:2.7
-plugin:workflow-cps:2.53
-plugin:workflow-cps-global-lib:2.9
-plugin:workflow-durable-task-step:2.19
-plugin:workflow-job:2.21
-plugin:workflow-multibranch:2.19
-plugin:workflow-scm-step:2.6
-plugin:workflow-step-api:2.15
-plugin:workflow-support:2.18
-#
-plugin:docker-workflow:1.17
-plugin:pipeline-graph-analysis:1.6
-plugin:pipeline-model-declarative-agent:1.1.1
-plugin:pipeline-model-api:1.2.9
-plugin:pipeline-rest-api:2.10
-plugin:pipeline-stage-tags-metadata:1.2.9
-#
-plugin:run-condition:1.0
-plugin:conditional-buildstep:1.3.6
+plugin:workflow-aggregator
+
+# Plugins below are not a part of the pipeline dependancies
+plugin:pipeline-model-extensions:
+plugin:docker-workflow
+plugin:pipeline-graph-analysis
+plugin:pipeline-model-declarative-agent
+plugin:pipeline-model-api
+plugin:pipeline-rest-api
+plugin:pipeline-stage-tags-metadata
+plugin:run-condition
+plugin:conditional-buildstep
