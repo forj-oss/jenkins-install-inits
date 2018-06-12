@@ -93,7 +93,7 @@ if (git_username && git_password) {
   credential_id = existing_credentials.id
 }
 else {
-    println("== seed-job.groovy --> No credential to create/maintain as GIT_USERNAME or GIT_PASSWORD not set.")
+    println("== seed-job.groovy --> No credential to create/maintain as SEED_JOBS_USERNAME or SEED_JOBS_PASSWORD not set.")
     //existing_credentials.getPassword()
 }
 
