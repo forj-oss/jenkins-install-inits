@@ -6,7 +6,7 @@ import com.cloudbees.plugins.credentials.impl.*;
 import com.cloudbees.plugins.credentials.*;
 import com.cloudbees.plugins.credentials.domains.*;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
-//import com.cloudbees.jenkins.plugins.awscredentials.AWSCredentialsImpl;
+import com.cloudbees.jenkins.plugins.sshcredentials.impl.*;
 import org.jenkinsci.plugins.plaincredentials.impl.*;
 import hudson.util.Secret;
 import groovy.json.JsonSlurper;
@@ -55,6 +55,13 @@ public class Credentials {
                                        this.config[i].key,
                                        this.config[i].value,
                                        this.config[i].folder);
+                    break
+                    case "ssh_credentials":
+                        createSSHKey(this.config[i].id,
+                                     this.config[i].key,
+                                     this.config[i].value,
+                                     this.config[i].folder);
+                    break
                     default: 
                         throw new Exception("Unsupported credentials type : " + this.config[i].type);
                 }
@@ -106,6 +113,19 @@ public class Credentials {
         catch (ClassNotFoundException ex){
             log.error("== credentials.groovy -Can't load the class AWSCredentialsImpl, you should probably activate the plugin aws-credentials :" + ex.message);
         }   
+    }
+
+    private void createSSHKey(String id, String userName, String privateKey, String folderName){
+        StandardCredentials c = new BasicSSHUserPrivateKey(
+          CredentialsScope.GLOBAL, //scope
+          id,
+          "userName", //username
+          new BasicSSHUserPrivateKey.DirectEntryPrivateKeySource(privateKey),
+          "", //passphrase
+          id //description
+        );
+
+        saveCredentials(c, folderName);
     }
 
     private void saveCredentials( StandardCredentials c, String folderName){
