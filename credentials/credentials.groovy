@@ -11,6 +11,8 @@ import org.jenkinsci.plugins.plaincredentials.impl.*;
 import hudson.util.Secret;
 import groovy.json.JsonSlurper;
 import org.apache.log4j.*;
+import java.io.File;
+
 
 Logger log = Logger.getInstance('credentials.groovy');
 
@@ -24,46 +26,54 @@ public class Credentials {
     }
 
     private Object readConfig(String configFile){
+       File inputFile;
         try {
             JsonSlurper jsonSlurper = new JsonSlurper()
-            File inputFile = new File(configFile)
+            inputFile = new File(configFile)
             return jsonSlurper.parseFile(inputFile, 'UTF-8')
         }
-        catch (Exception ex){
-            log.error("== credentials.groovy - Can't read configuration file :" + ex.message);
+        catch (Exception ex){         
+            if(! inputFile.exists()){
+                log.error("== credentials.groovy -File does not exist : " + configFile );
+            }
+            else{
+                log.error("== credentials.groovy - Can't read configuration file :" + ex.message);
+            }
         }
     }
 
     public void createCredentials(){
         try{
-            int nbCred = this.config.size;
-            for(int i =0; i < nbCred; i++){
-                switch(this.config[i].type) {
-                    case "secret_text" :
-                        createSecretText(this.config[i].id,
-                                         this.config[i].value, 
-                                         this.config[i].folder);
-                    break
-                    case "user_password":
-                        createUsernamePassword(this.config[i].id,
-                                               this.config[i].key,
-                                               this.config[i].value,
-                                               this.config[i].folder);
-                    break
-                    case "aws_credentials":
-                        createAWSCred (this.config[i].id,
-                                       this.config[i].key,
-                                       this.config[i].value,
-                                       this.config[i].folder);
-                    break
-                    case "ssh_credentials":
-                        createSSHKey(this.config[i].id,
-                                     this.config[i].key,
-                                     this.config[i].value,
-                                     this.config[i].folder);
-                    break
-                    default: 
-                        throw new Exception("Unsupported credentials type : " + this.config[i].type);
+            if(this.config != null){
+                int nbCred = this.config.size;
+                for(int i =0; i < nbCred; i++){
+                    switch(this.config[i].type) {
+                        case "secret_text" :
+                            createSecretText(this.config[i].id,
+                                            this.config[i].value, 
+                                            this.config[i].folder);
+                        break
+                        case "user_password":
+                            createUsernamePassword(this.config[i].id,
+                                                this.config[i].key,
+                                                this.config[i].value,
+                                                this.config[i].folder);
+                        break
+                        case "aws_credentials":
+                            createAWSCred (this.config[i].id,
+                                        this.config[i].key,
+                                        this.config[i].value,
+                                        this.config[i].folder);
+                        break
+                        case "ssh_credentials":
+                            createSSHKey(this.config[i].id,
+                                        this.config[i].key,
+                                        this.config[i].value,
+                                        this.config[i].folder);
+                        break
+                        default: 
+                            throw new Exception("Unsupported credentials type : " + this.config[i].type);
+                    }
                 }
             }
         }
@@ -148,4 +158,12 @@ log.info("== credentials.groovy - Start Configuration");
 String CRED_PATH = System.getenv("CRED_PATH");
 Credentials c = new Credentials(CRED_PATH);
 c.createCredentials();
+
+if(new File(CRED_PATH).delete()){
+    log.info("== credentials.groovy - Credential file deleted :" + CRED_PATH);
+}
+else {
+    log.error("== credentials.groovy - Can't delete the credential file :" + CRED_PATH);
+}
+
 log.info("== credentials.groovy - End Configuration");
