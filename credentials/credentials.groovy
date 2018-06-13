@@ -6,6 +6,7 @@ import com.cloudbees.plugins.credentials.impl.*;
 import com.cloudbees.plugins.credentials.*;
 import com.cloudbees.plugins.credentials.domains.*;
 import com.cloudbees.plugins.credentials.common.StandardCredentials;
+//import com.cloudbees.jenkins.plugins.awscredentials.AWSCredentialsImpl;
 import org.jenkinsci.plugins.plaincredentials.impl.*;
 import hudson.util.Secret;
 import groovy.json.JsonSlurper;
@@ -39,10 +40,9 @@ public class Credentials {
             for(int i =0; i < nbCred; i++){
                 switch(this.config[i].type) {
                     case "secret_text" :
-                        createSecretText(this.config[i].key,
-                                        this.config[i].value, 
-                                        this.config[i].folder, 
-                                        this.config[i].key);
+                        createSecretText(this.config[i].id,
+                                         this.config[i].value, 
+                                         this.config[i].folder);
                     break
                     case "user_password":
                         createUsernamePassword(this.config[i].id,
@@ -50,6 +50,11 @@ public class Credentials {
                                                this.config[i].value,
                                                this.config[i].folder);
                     break
+                    case "aws_credentials":
+                        createAWSCred (this.config[i].id,
+                                       this.config[i].key,
+                                       this.config[i].value,
+                                       this.config[i].folder);
                     default: 
                         throw new Exception("Unsupported credentials type : " + this.config[i].type);
                 }
@@ -60,11 +65,11 @@ public class Credentials {
         }
     }
 
-    private void createSecretText(String secretId, String value, String folderName, String description){
+    private void createSecretText(String secretId, String value, String folderName){
         StandardCredentials c = new StringCredentialsImpl(
                         CredentialsScope.GLOBAL,
                         secretId,
-                        description,
+                        secretId, //description
                         Secret.fromString(value));
         saveCredentials(c, folderName);     
     }
@@ -76,7 +81,31 @@ public class Credentials {
                                                                                 username,
                                                                                 password);
          saveCredentials(c, folderName);  
+    }
 
+    private void createAWSCred (String id, String accessKey, String secretKey, String folderName){
+        try {
+            Class o = this.class.classLoader.loadClass("com.cloudbees.jenkins.plugins.awscredentials.AWSCredentialsImpl");
+            Object[] args = new Object[5];
+            args[0] = CredentialsScope.GLOBAL;
+            args[1] = id;
+            args[2] = accessKey;
+            args[3] = secretKey;
+            args[4] = id;
+            StandardCredentials c = (StandardCredentials) o.newInstance(args);
+            /*
+            The line above is replacing the AWSCredentialsImpl constructor : 
+            StandardCredentials c = new AWSCredentialsImpl(
+                CredentialsScope.GLOBAL,
+                id,
+                accessKey,
+                secretKey,
+                id );*/ 
+            saveCredentials(c, folderName);
+        }
+        catch (ClassNotFoundException ex){
+            log.error("== credentials.groovy -Can't load the class AWSCredentialsImpl, you should probably activate the plugin aws-credentials :" + ex.message);
+        }   
     }
 
     private void saveCredentials( StandardCredentials c, String folderName){
