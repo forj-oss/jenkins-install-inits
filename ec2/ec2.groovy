@@ -12,6 +12,8 @@ import hudson.plugins.ec2.UnixData
 import jenkins.model.Jenkins
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
+import org.apache.log4j.*
+
 
 /**
 * Create an ec2 slave configuration
@@ -90,13 +92,35 @@ List<EC2Tag> createTags (Map tags){
     return ec2Tags
   }
   catch (Exception ex){
-    println ("Can't process the tags : " + ex.message)
+    log.error ("== ec2.groovy - Can't create tags : " + ex.message)
   }
 }
 
+Object readConfig(String config){
+        assert config!= null && config!= "" : "== ec2.groovy.readConfig - The config variables can't be null";
+
+        File inputFile;
+        try {
+            JsonSlurper jsonSlurper = new JsonSlurper();
+            inputFile = new File (config);
+            return jsonSlurper.parse(inputFile, 'UTF-8');
+        }
+        catch (Exception ex){         
+            if(! inputFile.exists()){
+                log.error("== ec2.groovy - does not exist : " + config );
+            }
+            else{
+                log.error("== ec2.groovy - Can't read configuration  :" + ex.message);
+            }
+        }
+    }
+
 /////////////////////////////////////////// MAIN ///////////////////////////////////////////////
 try {
-  println('== ec2.groovy - Start ec2 configuration')
+  // In groovy script we declare global variables without specifying type
+  log = Logger.getInstance('ec2.groovy');
+
+  log.info('== ec2.groovy - Start ec2 configuration')
   // check aws environment variables
   String AWS_ACCESS_KEY_ID = System.getenv("AWS_ACCESS_KEY_ID")
   assert AWS_ACCESS_KEY_ID != null : "The env var AWS_ACCESS_KEY_ID must not be empty"
@@ -127,13 +151,7 @@ try {
   store.addCredentials(domain, aWSCredentialsImpl)
 
   // configure ec2 plugins clouds
-  JsonSlurper jsonSlurper = new JsonSlurper()
-  println('== ec2.groovy - Start read configuration file')
-  File inputFile = new File(EC2_CONFIG)
-  println('== ec2.groovy - End read configuration file')
-  println('== ec2.groovy - Start parse the configuration')
-  Object config = jsonSlurper.parseFile(inputFile, 'UTF-8')
-  println('== ec2.groovy - End parse the configuration')
+  Object config = readConfig(EC2_CONFIG)
 
   if( !config){
     throw new Exception("== ec2.groovy : Can't parse the "+ EC2_CONFIG + " file")
@@ -161,8 +179,8 @@ try {
 
   // save current Jenkins state to disk
   jenkins.save()
-  println('== ec2.groovy - End ec2 configuration')
+  log.info('== ec2.groovy - End ec2 configuration')
 }
 catch (Exception ex){
-  println ("== ec2.groovy : " + ex.message)
+  log.error ("== ec2.groovy - " + ex.message)
 }
