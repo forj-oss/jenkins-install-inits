@@ -1,0 +1,31 @@
+[
+    {
+        "name":"my funny library",
+        "default_version": "master",
+        "implicitly_load" : true,
+        "allow_override_version" : true,
+        "inc_lib_changes" : false,
+        "retrieval_method" : "modern",
+        "scm": {
+            "endpoint":{
+                "name":"my endpoint",
+                "url" : "https://github.company.com/api/v3/"
+            },
+            "credentials":{
+                "id": "id",
+                "login": "login",
+                "password": "github-token"
+            },
+            "owner" : "Organization",
+            "repository" : "jenkins-shared-lib",
+            "behaviours" :{
+                "branchDiscovery" : 1,
+                "originPRDiscovery" : 1,
+                "forkPRDiscovery" :{
+                    "strategyId" : 1,
+                    "trust" : "TrustPermission"
+                }
+            }
+        }
+    }
+]
