@@ -33,7 +33,7 @@ public class SharedLib {
             return jsonSlurper.parse(inputFile, 'UTF-8');
         }
         catch (Exception ex){         
-            if(! input.exists()){
+            if(! inputFile.exists()){
                 log.error("== shared-lib.groovy - does not exist : " + config );
             }
             else{
