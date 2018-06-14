@@ -1,0 +1,24 @@
+[
+    {
+        "name":"my funny library",
+        "default_version": "master",
+        "implicitly_load" : true,
+        "allow_override_version" : true,
+        "inc_lib_changes" : false,
+        "retrieval_method" : "modern",
+        "scm": {
+            "endpoint":{
+                "name":"my endpoint",
+                "url" : "https://github.dxc.com/api/v3/"
+            },
+            "credentials":{
+                "id": "id",
+                "login": "lgil3",
+                "password": "ac10742171dba12341c472d36f18f8f581ef4c39"
+            },
+            "owner" : "Platform-DXC",
+            "repository" : "jenkins-shared-lib",
+            "behaviours" : "Not supported for now"
+        }
+    }
+]
