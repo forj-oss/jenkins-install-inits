@@ -5,6 +5,9 @@ import com.cloudbees.hudson.plugins.folder.properties.FolderCredentialsProvider.
 import org.jenkinsci.plugins.workflow.libs.SCMSourceRetriever;
 import org.jenkinsci.plugins.workflow.libs.LibraryConfiguration;
 import jenkins.plugins.git.GitSCMSource;
+import jenkins.scm.api.trait.SCMSourceTrait;
+import jenkins.scm.api.trait.SCMSourceRequest;
+import jenkins.scm.api.trait.SCMHeadAuthority;
 import org.jenkinsci.plugins.*;
 import org.jenkinsci.plugins.github_branch_source.*;
 import com.cloudbees.plugins.credentials.*;
@@ -106,6 +109,75 @@ public class SharedLib {
         }
     }
 
+    private List<SCMSourceTrait> getBehaviours(Object behaviours){
+        assert behaviours != null : "== shared-lib.groovy.getBehaviours - behaviours can't be null";
+        log.debug("== shared-lib.groovy.getBehaviours - "+ behaviours);
+
+        List<SCMSourceTrait> res = [];
+
+        /*
+        * Authorized values are :
+        * - 1 : Exclude branches that are also field as PR
+        * - 2 : Only branches htat are also field as PR
+        * - 3 : All branches
+        */
+        if(behaviours.branchDiscovery != null && behaviours.branchDiscovery > 0 && behaviours.branchDiscovery < 4) {
+          BranchDiscoveryTrait bdt = new BranchDiscoveryTrait(behaviours.branchDiscovery);    
+          res.add(bdt);
+        }
+
+        /*
+        * Authorized values are :
+        * - 1 : Merging the pull request with the current target branch revision
+        * - 2 : The current pull request revision
+        * - 3 : Both the current pull request revision and the pull resquest with the current target revision
+        */
+        if(behaviours.originPRDiscovery != null && behaviours.originPRDiscovery > 0 && behaviours.originPRDiscovery < 4) {
+            OriginPullRequestDiscoveryTrait oprd = new OriginPullRequestDiscoveryTrait(behaviours.originPRDiscovery);
+            res.add(oprd);
+        }
+
+        /*
+        * Strategy authorized values are :
+        * - 1 : Merging the pull request with the current target branch revision
+        * - 2 : The current pull request revision
+        * - 3 : Both the current pull request revision and the pull resquest with the current target revision
+        *
+        * Trust authorized values are :
+        *   - TrustNobody : Nobody
+        *   - TrustContributors : Contributors only
+        *   - TrustPermission : For users with Admin or write permission
+        *   - TrustEveryone : Everyone
+        */
+        if(behaviours.forkPRDiscovery != null && behaviours.forkPRDiscovery.trust != null &&
+           behaviours.forkPRDiscovery.strategyId > 0 && behaviours.forkPRDiscovery.strategyId < 4){
+
+            SCMHeadAuthority<SCMSourceRequest, PullRequestSCMHead, PullRequestSCMRevision> auth;
+            switch(behaviours.forkPRDiscovery.trust) {
+                case "TrustNobody":
+                     auth = new ForkPullRequestDiscoveryTrait.TrustNobody();
+                break
+                case "TrustContributors":
+                     auth = new ForkPullRequestDiscoveryTrait.TrustContributors();
+                break
+                case "TrustPermission":
+                     auth = new ForkPullRequestDiscoveryTrait.TrustPermission();
+                break
+                case "TrustEveryone":
+                     auth = new ForkPullRequestDiscoveryTrait.TrustEveryone();
+                break
+                default:
+                    throw new Exception("Unrecognize SCMSourceTrait in behaviours :" + behaviours.forkPRDiscovery.trust);
+                break
+            }
+
+            ForkPullRequestDiscoveryTrait fprd = new ForkPullRequestDiscoveryTrait(behaviours.forkPRDiscovery.strategyId,auth);
+            res.add(fprd);
+        }
+
+        return res;
+    } 
+
     private SCMSourceRetriever createGitHubRetriever (String credentialId,String apiUri, String owner, String repository, Object behaviours){
         assert credentialId != null && credentialId != "" : "== shared-lib.groovy.createGitHubRetriever - CredentialId can't be null";
         assert apiUri != null && apiUri != "" : "== shared-lib.groovy.createGitHubRetriever - apiUri can't be null";
@@ -115,6 +187,12 @@ public class SharedLib {
         GitHubSCMSource src = new GitHubSCMSource(owner, repository);
         src.setCredentialsId(credentialId);
         src.setApiUri(apiUri);
+
+        List<SCMSourceTrait> beh = getBehaviours(behaviours);
+        if (beh != null && beh.size > 0){
+            src.setTraits(beh);
+        }
+
         return new SCMSourceRetriever(src);    
     }
 
@@ -154,7 +232,7 @@ public class SharedLib {
                                             this.config[i].scm.endpoint.url,
                                             this.config[i].scm.owner,
                                             this.config[i].scm.repository,
-                                            null);
+                                            this.config[i].scm.behaviours);
                         lib = createSharedLib(this.config[i], gitHub); 
                     }
 

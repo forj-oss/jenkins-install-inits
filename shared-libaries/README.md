@@ -29,13 +29,53 @@ To configure the feature you will need to create a configuration file. The path 
             },
             "owner" : "Organization or User",
             "repository" : "jenkins-shared-lib",
-            "behaviours" : "Not supported for now"
+             "behaviours" :{
+                "branchDiscovery" : 1,
+                "originPRDiscovery" : 1,
+                "forkPRDiscovery" :{
+                    "strategyId" : 1,
+                    "trust" : "TrustPermission"
+                }
+            }
         }
     }
 ]
-
 ```
+
+### branchDiscovery
+
+Authorized values are :
+
+- 1 : Exclude branches that are also field as PR
+- 2 : Only branches htat are also field as PR
+- 3 : All branches
+
+### originPRDiscovery
+
+Authorized values are :
+
+- 1 : Merging the pull request with the current target branch revision
+- 2 : The current pull request revision
+- 3 : Both the current pull request revision and the pull resquest with the current target revision
+
+### forkPRDiscovery
+
+#### forkPRDiscovery.strategyId 
+
+Authorized values are :
+
+- 1 : Merging the pull request with the current target branch revision
+- 2 : The current pull request revision
+- 3 : Both the current pull request revision and the pull resquest with the current target revision
+
+##### forkPRDiscovery.trust 
+Authorized values are :
+
+- TrustNobody : Nobody
+- TrustContributors : Contributors only
+- TrustPermission : For users with Admin or write permission
+- TrustEveryone : Everyone
 
 ## TODO
 
-Currently this plugin only support modern SCM without any additional behaviours.
+Currently this plugin only support modern SCM.

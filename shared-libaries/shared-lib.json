@@ -9,16 +9,23 @@
         "scm": {
             "endpoint":{
                 "name":"my endpoint",
-                "url" : "https://github.dxc.com/api/v3/"
+                "url" : "https://github.company.com/api/v3/"
             },
             "credentials":{
                 "id": "id",
-                "login": "lgil3",
-                "password": "ac10742171dba12341c472d36f18f8f581ef4c39"
+                "login": "login",
+                "password": "github-token"
             },
-            "owner" : "Platform-DXC",
+            "owner" : "Organization",
             "repository" : "jenkins-shared-lib",
-            "behaviours" : "Not supported for now"
+            "behaviours" :{
+                "branchDiscovery" : 1,
+                "originPRDiscovery" : 1,
+                "forkPRDiscovery" :{
+                    "strategyId" : 1,
+                    "trust" : "TrustPermission"
+                }
+            }
         }
     }
 ]
