@@ -1,2 +1,2 @@
-plugin:github-oauth:0.22.3
+plugin:github-oauth:
 groovy:github-authentication
