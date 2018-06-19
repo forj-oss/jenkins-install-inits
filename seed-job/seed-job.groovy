@@ -65,47 +65,63 @@ if (jobdsl_security && jobdsl_security == "true") {
 
 def credential_id
 
-if (seedJobId != "" && git_username && git_password) {
-  println("== seed-job.groovy --> SEED_JOBS_USERNAME is set to '" + git_username + "'")
-  println("== seed-job.groovy --> SEED_JOBS_PASSWORD is set to '***'")
-
-  newCredential = new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, seedJobId, 'seedJob user/token (github)', git_username, git_password)
-
-  username_matcher = CredentialsMatchers.withUsername(git_username)
+if (seedJobId != "" ) {
+  println("== seed-job.groovy --> Seed job credential ID is set to '" + seedJobId + "'")
   available_credentials = 
     CredentialsProvider.lookupCredentials(
     StandardUsernameCredentials.class,
-    Jenkins.getInstance(),
-    hudson.security.ACL.SYSTEM,
+    null, // jenkins instance
+    null, // By default hudson.security.ACL.SYSTEM
     new SchemeRequirement("ssh")
   )
+  if (git_username && git_password) {
+    println("== seed-job.groovy --> SEED_JOBS_USERNAME is set to '" + git_username + "'")
+    println("== seed-job.groovy --> SEED_JOBS_PASSWORD is set to '***'")
 
-  existing_credentials =
-    CredentialsMatchers.firstOrNull(
-      available_credentials,
-      username_matcher
-    )
+    newCredential = new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, seedJobId, 'seedJob user/token (github)', git_username, git_password)
 
-    global_domain = Domain.global()
-    credentials_store = Jenkins.instance.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
+    username_matcher = CredentialsMatchers.withUsername(git_username)
 
-  if (existing_credentials == null) {
-    credentials_store.addCredentials(global_domain, newCredentials)
+    existing_credentials =
+      CredentialsMatchers.firstOrNull(
+        available_credentials,
+        username_matcher
+      )
 
-    println("== seed-job.groovy --> '" + seedJobId + "' credential added.")
-  } else {
-    credentials_store.updateCredentials(global_domain, existing_credentials, newCredential)
+      global_domain = Domain.global()
+      credentials_store = Jenkins.instance.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
 
-    println("== seed-job.groovy --> '" + seedJobId + "' credential updated.")
+    if (existing_credentials == null) {
+      credentials_store.addCredentials(global_domain, newCredential)
+
+      println("== seed-job.groovy --> '" + seedJobId + "' credential added.")
+    } else {
+      credentials_store.updateCredentials(global_domain, existing_credentials, newCredential)
+
+      println("== seed-job.groovy --> '" + seedJobId + "' credential updated.")
+    }
+    // else // TODO: Reset the password of the credential from what is passed.
+    credential_id = existing_credentials.id
   }
-  // else // TODO: Reset the password of the credential from what is passed.
-  credential_id = existing_credentials.id
-}
-else {
-    println("== seed-job.groovy --> No credential to create/maintain as SEED_JOBS_USERNAME or SEED_JOBS_PASSWORD not set or SEED_JOBS_ID is set empty.")
-    //existing_credentials.getPassword()
-}
+  else {
+    // Search for SEED_JOBS_ID
+    id_matcher = CredentialsMatchers.withId(seedJobId)
 
+    existing_credentials =
+      CredentialsMatchers.firstOrNull(
+        available_credentials,
+        id_matcher
+      )
+    if (existing_credentials == null) {
+      println("== seed-job.groovy --> Warning !!! Credential " + seedJobId + " has not be defined. 'seed-job' won't use it. It has not been added because SEED_JOBS_USERNAME/SEED_JOBS_PASSWORD are not set. You can use credentials feature to set it.")
+    } else {
+      println("== seed-job.groovy --> 'seed-job' uses the already existing '" + seedJobId + "' credential ID.")
+      credential_id = existing_credentials.id
+    }
+  }
+} else {
+  println("== seed-job.groovy --> No credential to attach to the seed-job. SEED_JOBS_ID is set empty.")
+}
 def seedJobName = "seed-job"
 
 if(seed_jobs_repo) {
