@@ -30,11 +30,6 @@ def seedJobId = 'seedjob-github'
 if (seedJobsID) {
   seedJobId = seedJobsID
 } 
-if (seedJobId != "") {
-  println("== seed-job.groovy --> Seed job ID set to '" + seedJobId + "'")
-} else {
-  println("== seed-job.groovy --> No credential to attach to the seed-job")
-}
 
 if ((git_password || git_username) && (!seedJobs_password && !seedJobs_username)) {
   println("== seed-job.groovy --> GIT_USERNAME or GIT_PASSWORD is obsolete. Use SEED_JOBS_USERNAME and SEED_JOBS_PASSWORD instead.")
