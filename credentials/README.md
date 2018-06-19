@@ -7,10 +7,12 @@ This feature is used to create credentials at the launch time. It currently supp
 - AWS Credentials
 - SSH Private Key
 
-## Envionment variables
+## Environment variables
+
 The path to the configuration file is provided through and environment variable named **CRED_PATH**
 
 ## Configuration file
+
 To identify which kind of credential we have to create we use the field type which can have the following values :
 
 - secret_text : Secret text credentials
