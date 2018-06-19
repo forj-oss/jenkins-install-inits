@@ -24,6 +24,17 @@ git_password = env['GIT_PASSWORD']
 git_username = env['GIT_USERNAME']
 seedJobs_password = env['SEED_JOBS_PASSWORD']
 seedJobs_username = env['SEED_JOBS_USERNAME']
+seedJobsID = env['SEED_JOBS_ID']
+
+def seedJobId = 'seedjob-github'
+if (seedJobsID) {
+  seedJobId = seedJobsID
+} 
+if (seedJobId != "") {
+  println("== seed-job.groovy --> Seed job ID set to '" + seedJobId + "'")
+} else {
+  println("== seed-job.groovy --> No credential to attach to the seed-job")
+}
 
 if ((git_password || git_username) && (!seedJobs_password && !seedJobs_username)) {
   println("== seed-job.groovy --> GIT_USERNAME or GIT_PASSWORD is obsolete. Use SEED_JOBS_USERNAME and SEED_JOBS_PASSWORD instead.")
@@ -54,11 +65,9 @@ if (jobdsl_security && jobdsl_security == "true") {
 
 def credential_id
 
-if (git_username && git_password) {
+if (seedJobId != "" && git_username && git_password) {
   println("== seed-job.groovy --> SEED_JOBS_USERNAME is set to '" + git_username + "'")
   println("== seed-job.groovy --> SEED_JOBS_PASSWORD is set to '***'")
-
-  def seedJobId = 'seedjob-github'
 
   newCredential = new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, seedJobId, 'seedJob user/token (github)', git_username, git_password)
 
@@ -93,7 +102,7 @@ if (git_username && git_password) {
   credential_id = existing_credentials.id
 }
 else {
-    println("== seed-job.groovy --> No credential to create/maintain as SEED_JOBS_USERNAME or SEED_JOBS_PASSWORD not set.")
+    println("== seed-job.groovy --> No credential to create/maintain as SEED_JOBS_USERNAME or SEED_JOBS_PASSWORD not set or SEED_JOBS_ID is set empty.")
     //existing_credentials.getPassword()
 }
 

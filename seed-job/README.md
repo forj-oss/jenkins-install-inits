@@ -1,9 +1,12 @@
 # Job DSL seed job
 
+## How to define it
+
 This script will initialize your first seed job and execute it.
 It currently requires following parameters (environment variables)
 
 - `SEED_JOBS_REPO`          : Required. GIT url.
+- `SEED_JOBS_ID`            : Optional. Jenkins credential ID. By default, set ID to 'seedjob-github'. 
 - `SEED_JOBS_PASSWORD`      : Optional. Password required to access the GIT repo. 
 - `SEED_JOBS_USERNAME`      : Optional. Username required to acces the GIT repo.
 - `BUILD_DSL_SCRIPTS`       : Optional. Job DSL collection of groovy scripts to generate/maintain your jobs. By default, it is set to `jobs_dsl/**/*.groovy`
@@ -12,7 +15,7 @@ It currently requires following parameters (environment variables)
 It has been designed to do the following:
 
 1. create Freestyle project, called 'seed-job'.
-2. Create the credential if `SEED_JOBS_USERNAME` & `SEED_JOBS_PASSWORD` are set. The credential ID will be `seedjob-github`.
+2. Create the credential if the `SEED_JOBS_ID` doesn't exist. If missing, and `SEED_JOBS_USERNAME`, `SEED_JOBS_PASSWORD` & `SEED_JOBS_ID` are set, the credential ID will be created.
 3. Attach the SCM to the seed-job with the `SEED_JOBS_REPO` and eventually attach the credential created.
 4. Configure job-dsl to read all DSL from  `jobs-dsl/**/*.groovy`, or from `BUILD_DSL_SCRIPTS`
 5. Run the seed-job
@@ -34,7 +37,7 @@ Ex:
        }
     }
 
+## TODO
 
-# TODO
 - Add support for more credentials (SSH like)
 - password given from a more secured place and removed when imported as Jenkins credential.
