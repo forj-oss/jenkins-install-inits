@@ -76,7 +76,7 @@ if (seedJobId != "" ) {
   available_credentials = 
     CredentialsProvider.lookupCredentials(
     StandardUsernameCredentials.class,
-    Jenkins.instance,
+    Jenkins.getInstance(),
     hudson.security.ACL.SYSTEM,
     new SchemeRequirement("ssh")
   )
