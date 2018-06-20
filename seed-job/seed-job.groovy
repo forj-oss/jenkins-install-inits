@@ -24,13 +24,9 @@ git_password = env['GIT_PASSWORD']
 git_username = env['GIT_USERNAME']
 seedJobs_password = env['SEED_JOBS_PASSWORD']
 seedJobs_username = env['SEED_JOBS_USERNAME']
-seedJobsID = env['SEED_JOBS_ID']
+seedJobsID = env['SEED_JOBS_CRED_ID']
 
-def seedJobId = 'seedjob-github'
-if (seedJobsID) {
-  seedJobId = seedJobsID
-} 
-
+// Compatibility
 if ((git_password || git_username) && (!seedJobs_password && !seedJobs_username)) {
   println("== seed-job.groovy --> GIT_USERNAME or GIT_PASSWORD is obsolete. Use SEED_JOBS_USERNAME and SEED_JOBS_PASSWORD instead.")
 } else {
@@ -38,6 +34,21 @@ if ((git_password || git_username) && (!seedJobs_password && !seedJobs_username)
   git_username = seedJobs_username
 }
 
+// Define Credential ID
+def seedJobId = ''
+
+if (seedJobsID) {
+  if (seedJobsID == "none") {
+    seedJobId = ""
+  } else {
+    seedJobId = seedJobsID 
+  }
+} 
+
+if (git_username && git_password && !seedJobsID) {
+  seedJobId = 'seedjob-github'
+  println("== seed-job.groovy --> Using default seed job credential ID '" + seedJobId + "'")
+}
 
 jobdsl_security = env['JOB_DSL_SCRIPT_SECURITY']
 
@@ -65,8 +76,8 @@ if (seedJobId != "" ) {
   available_credentials = 
     CredentialsProvider.lookupCredentials(
     StandardUsernameCredentials.class,
-    null, // jenkins instance
-    null, // By default hudson.security.ACL.SYSTEM
+    Jenkins.instance,
+    hudson.security.ACL.SYSTEM,
     new SchemeRequirement("ssh")
   )
   if (git_username && git_password) {
@@ -88,18 +99,18 @@ if (seedJobId != "" ) {
 
     if (existing_credentials == null) {
       credentials_store.addCredentials(global_domain, newCredential)
+      credential_id = newCredential.id
 
       println("== seed-job.groovy --> '" + seedJobId + "' credential added.")
     } else {
       credentials_store.updateCredentials(global_domain, existing_credentials, newCredential)
+      credential_id = existing_credentials.id
 
       println("== seed-job.groovy --> '" + seedJobId + "' credential updated.")
     }
-    // else // TODO: Reset the password of the credential from what is passed.
-    credential_id = existing_credentials.id
   }
   else {
-    // Search for SEED_JOBS_ID
+    // Search for SEED_JOBS_CRED_ID
     id_matcher = CredentialsMatchers.withId(seedJobId)
 
     existing_credentials =
@@ -115,7 +126,7 @@ if (seedJobId != "" ) {
     }
   }
 } else {
-  println("== seed-job.groovy --> No credential to attach to the seed-job. SEED_JOBS_ID is set empty.")
+  println("== seed-job.groovy --> No credential to attach to the seed-job. SEED_JOBS_CRED_ID is set empty.")
 }
 def seedJobName = "seed-job"
 
