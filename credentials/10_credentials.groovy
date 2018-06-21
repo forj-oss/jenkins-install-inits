@@ -1,4 +1,6 @@
-import jenkins.model.*
+import jenkins.model.*;
+import hudson.*;
+import hudson.model.*;
 import com.cloudbees.hudson.plugins.folder.*;
 import com.cloudbees.hudson.plugins.folder.properties.*;
 import com.cloudbees.hudson.plugins.folder.properties.FolderCredentialsProvider.FolderCredentialsProperty;
