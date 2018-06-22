@@ -125,6 +125,26 @@ Object readConfig(String config){
     }
 }
 
+Boolean validConfig(Object config){
+  Boolean res = true;
+  
+  // Don t duplicate cloud Name
+  int size = config.size();
+  List<String> cloudNames = []
+  for(int i = 0; i < size; i++){
+    if (! cloudNames.contains(config[i].cloudName)){
+      cloudNames.add(config[i].cloudName);
+    }
+    else {
+      res = false;
+      throw new Exception('The cloud name must be unique (' + config[i].cloudName + ')')
+    }
+  }
+
+  return res;
+
+}
+
 /////////////////////////////////////////// MAIN ///////////////////////////////////////////////
 try {
   // In groovy script we declare global variables without specifying type
@@ -162,40 +182,39 @@ try {
   // configure ec2 plugins clouds
   log.debug('== ec2.groovy - Configure the EC2 plugin')
   Object config = readConfig(EC2_CONFIG)
-
+ 
   if( !config){
     throw new Exception("== ec2.groovy : Can't parse the "+ EC2_CONFIG + " file")
   }
 
-  for(i=0; i < config.size; i++){
-    switch (config[i].cloudType) {
-      case "amazonEC2Cloud": 
-        List<SlaveTemplate> templates = []
+  if(validConfig(config)){
+    // clean existing cloud before create the new ones
+    log.info('== ec2.groovy - Delete existing ec2 clouds')
+    jenkins.clouds.removeAll(hudson.plugins.ec2.AmazonEC2Cloud)
 
-        // read slaves configuration and set the templates array         
-        for(j=0; j < config[i].slavesTemplate.size; j++){           
-          SlaveTemplate template = createSlaveTemplate(config[i].slavesTemplate[j])
-          templates.add(template)
-        }
+    for(i=0; i < config.size; i++){
+      switch (config[i].cloudType) {
+        case "amazonEC2Cloud":        
+          List<SlaveTemplate> templates = []
 
-        AmazonEC2Cloud amazonEC2Cloud = createAmazonEC2Cloud(config[i], (List<? extends SlaveTemplate>) templates)
+          // read slaves configuration and set the templates array         
+          for(j=0; j < config[i].slavesTemplate.size; j++){           
+            SlaveTemplate template = createSlaveTemplate(config[i].slavesTemplate[j])
+            templates.add(template)
+          }
 
-        // add cloud configuration to Jenkins, remove it before if it already exists
-        // Add ec2- as jenkins prefix the cloud name with the cloud type
-        AmazonEC2Cloud cloud = jenkins.clouds.getByName("ec2-"+config[i].cloudName)
-        if ( cloud != null) {
-          jenkins.clouds.remove(cloud)
-        }
-
-        jenkins.clouds.add(amazonEC2Cloud)
-        break;
-      default: break
+          AmazonEC2Cloud amazonEC2Cloud = createAmazonEC2Cloud(config[i], (List<? extends SlaveTemplate>) templates)
+          jenkins.clouds.add(amazonEC2Cloud)
+          break;
+        default: break
+      }
     }
-  }
 
-  // save current Jenkins state to disk
-  jenkins.save()
+    // save current Jenkins state to disk
+    jenkins.save()
+  }
   log.info('== ec2.groovy - End ec2 configuration')
+
 }
 catch (Exception ex){
   log.error ("== ec2.groovy - " + ex.message)
