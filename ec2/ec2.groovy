@@ -180,9 +180,11 @@ try {
 
         AmazonEC2Cloud amazonEC2Cloud = createAmazonEC2Cloud(config[i], (List<? extends SlaveTemplate>) templates)
 
-        // add cloud configuration to Jenkins
-        if ( jenkins.clouds.getByName(config[i].cloudName) ) {
-          jenkins.clouds.remove(cloudList.getByName(config[i].cloudName))
+        // add cloud configuration to Jenkins, remove it before if it already exists
+        // Add ec2- as jenkins prefix the cloud name with the cloud type
+        AmazonEC2Cloud cloud = jenkins.clouds.getByName("ec2-"+config[i].cloudName)
+        if ( cloud != null) {
+          jenkins.clouds.remove(cloud)
         }
 
         jenkins.clouds.add(amazonEC2Cloud)
