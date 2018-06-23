@@ -9,6 +9,8 @@ To configure basic security, think about [basic-security](../basic-security) fea
 - Add `jenkins-init` in your features.lst and build your docker image, or run the [jenkins_install.sh](../jenkins_install.sh) on your jenkins server.
 - Add one or more variable to predefine your jenkins installation.
   - `JENKINS_URL` : Define the official jenkins URL you want.
+  - `JENKINS_NB_EXECUTORS` : Number of executor in the master
+  - `JENKINS_LABELS` : Define the jenkins labels
 
 jenkins-init feature is going to be executed at the earliest boot time compare to other features (based on groovy file name sort)
 
