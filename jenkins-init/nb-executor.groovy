@@ -5,7 +5,7 @@ Logger log  =Logger.getInstance('nb-executor.groovy');
 log.info('== nb-executor.groovy - Start nb executors configuration');
 
 try {
-    String tmp = System.getenv("JENKINS_NB_EXECUTORS") ? System.getenv("JENKINS_NB_EXECUTORS") : "0";
+    String tmp = System.getenv("JENKINS_NB_EXECUTORS") ? System.getenv("JENKINS_NB_EXECUTORS") : "2";
     int NB_EXEC = Integer.parseInt(tmp);
     Jenkins jenkins =  Jenkins.getInstance();
     jenkins.setNumExecutors(NB_EXEC);

@@ -5,7 +5,7 @@ Logger log  =Logger.getInstance('label.groovy');
 log.info('== label.groovy - Start labels configuration');
 
 try {
-    String LABELS = System.getenv("JENKINS_LABELS") ? System.getenv("JENKINS_LABELS") : "";
+    String LABELS = System.getenv("JENKINS_LABELS") ? System.getenv("JENKINS_LABELS") : "forjj";
     Jenkins jenkins =  Jenkins.getInstance();
     jenkins.setLabelString(LABELS);
     jenkins.save();
