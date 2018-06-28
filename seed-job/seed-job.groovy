@@ -142,6 +142,8 @@ if(seed_jobs_repo) {
     println("== seed-job.groovy --> FreestyleProject '"+ seedJobName +"' already exist. Checking...")
   }
 
+   seedJob.setAssignedLabel(Jenkins.getInstance().getSelfLabel())
+
   // Check or create SCM config
   def scm 
 
