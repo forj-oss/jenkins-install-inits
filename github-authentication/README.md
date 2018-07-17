@@ -1,12 +1,14 @@
 # Github OAuth Plugin
 
+## Introduction
+
 This feature implements the Github OAuth jenkins plugin and help to configure it.
 
 The Github OAuth is used to authenticate your jenkins instance with github.
 
 **WARNING!!!** This feature is incompatible with [basic-security feature](../basic-security).
 
-# How to use it?
+## How to use it
 
 Before configuring the plugin you must create a GitHub application registration.
 
@@ -20,6 +22,7 @@ Before configuring the plugin you must create a GitHub application registration.
 - Add `GITHUB_API_URL` in the jenkins environment startup.
 - Add `GITHUB_CLIENT_ID` in the jenkins environment startup.
 - Add `GITHUB_CLIENT_SECRET` in the jenkins environment startup.
+- Optionally, add `GITHUB_OATH_SCOPES` in the jenkins environment startup. By default, scope is set to `read:org,user:email`.
 
 Example:
 ```
@@ -28,3 +31,5 @@ GITHUB_API_URL="https://api.github.com/"
 GITHUB_CLIENT_ID=<GITHUB_CLIENT_ID>
 GITHUB_CLIENT_SECRET=<GITHUB_CLIENT_SECRET>
 ```
+
+TODO: Move GITHUB_CLIENT_ID & GITHUB_CLIENT_SECRET to a file instead of env variables.

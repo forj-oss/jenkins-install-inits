@@ -23,7 +23,9 @@ if (GITHUB_API_URL && GITHUB_URL && GITHUB_CLIENT_ID && GITHUB_CLIENT_SECRET) {
   String clientID = GITHUB_CLIENT_ID 
   String clientSecret = GITHUB_CLIENT_SECRET 
   String oauthScopes = 'read:org,user:email'
-
+  if (GITHUB_OATH_SCOPES) {
+    oauthScopes = GITHUB_OATH_SCOPES
+  }
 
   SecurityRealm github_realm = new GithubSecurityRealm(githubWebUri, githubApiUri, clientID, clientSecret, oauthScopes)
 //check for equality, no need to modify the runtime if no settings changed
