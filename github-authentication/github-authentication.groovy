@@ -9,6 +9,7 @@ GITHUB_URL = env['GITHUB_URL']
 GITHUB_API_URL = env['GITHUB_API_URL']
 GITHUB_CLIENT_ID = env['GITHUB_CLIENT_ID']
 GITHUB_CLIENT_SECRET = env['GITHUB_CLIENT_SECRET']
+GITHUB_OATH_SCOPES = env['GITHUB_OATH_SCOPES']
 
 println('== github-authentication.groovy - GITHUB_API_URL = ' + GITHUB_API_URL)
 println('== github-authentication.groovy - GITHUB_URL = ' + GITHUB_URL)
@@ -16,6 +17,7 @@ println('== github-authentication.groovy - GITHUB_CLIENT_ID = ' + GITHUB_CLIENT_
 if (GITHUB_CLIENT_SECRET) {
    println('== github-authentication.groovy - GITHUB_CLIENT_SECRET = "***"')
 }
+println('== github-authentication.groovy - GITHUB_OATH_SCOPES = ' + GITHUB_OATH_SCOPES)
 
 if (GITHUB_API_URL && GITHUB_URL && GITHUB_CLIENT_ID && GITHUB_CLIENT_SECRET) {
   String githubWebUri = GITHUB_URL
