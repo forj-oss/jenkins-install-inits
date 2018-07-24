@@ -44,6 +44,18 @@ public class Credentials {
         }
     }
 
+    public void deleteAllCredentials(){
+        def providers = jenkins.model.Jenkins.instance.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')
+        
+        for (p in providers){        
+            for (d in p.getDomainCredentials()){
+                for (c in d.getCredentials()) {
+                    p.removeCredentials(d.getDomain(),c)
+                }
+            }
+        }
+    }
+
     public void createCredentials(){
         try{
             if(this.config != null){
@@ -159,6 +171,7 @@ public class Credentials {
 log.info("== credentials.groovy - Start Configuration");
 String CRED_PATH = System.getenv("CRED_PATH");
 Credentials c = new Credentials(CRED_PATH);
+c.deleteAllCredentials();
 c.createCredentials();
 
 if(new File(CRED_PATH).delete()){
