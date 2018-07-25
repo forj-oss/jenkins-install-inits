@@ -96,7 +96,7 @@ public class Credentials {
         }
     }
 
-    private void createSecretText(String secretId, String value, String folderName){
+    public void createSecretText(String secretId, String value, String folderName){
         StandardCredentials c = new StringCredentialsImpl(
                         CredentialsScope.GLOBAL,
                         secretId,
@@ -105,7 +105,7 @@ public class Credentials {
         saveCredentials(c, folderName);     
     }
 
-    private void createUsernamePassword ( String id, String username, String password, String folderName){
+    public void createUsernamePassword ( String id, String username, String password, String folderName){
         StandardCredentials c = new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL,
                                                                                 id,
                                                                                 username,//description
@@ -114,7 +114,7 @@ public class Credentials {
          saveCredentials(c, folderName);  
     }
 
-    private void createAWSCred (String id, String accessKey, String secretKey, String folderName){
+    public void createAWSCred (String id, String accessKey, String secretKey, String folderName){
         try {
             Class o = this.class.classLoader.loadClass("com.cloudbees.jenkins.plugins.awscredentials.AWSCredentialsImpl");
             Object[] args = new Object[5];
@@ -139,7 +139,7 @@ public class Credentials {
         }   
     }
 
-    private void createSSHKey(String id, String userName, String privateKey, String folderName){
+    public void createSSHKey(String id, String userName, String privateKey, String folderName){
         StandardCredentials c = new BasicSSHUserPrivateKey(
           CredentialsScope.GLOBAL, //scope
           id,
@@ -152,18 +152,39 @@ public class Credentials {
         saveCredentials(c, folderName);
     }
 
+    public StandardCredentials getCredentialById(String id, Domain domain,  CredentialsStore store){
+        List<Credentials> creds = store.getCredentials(domain);
+        for (c in creds){
+            if( c.id == id){
+                return (StandardCredentials) c
+            }
+        }
+
+        return null
+    }
+
     private void saveCredentials( StandardCredentials c, String folderName){
-         if(folderName != null && folderName != ""){     
+        CredentialsStore store = SystemCredentialsProvider.getInstance().getStore()
+        Domain domain = Domain.global()
+
+        if(folderName != null && folderName != ""){     
             for(job in Jenkins.instance.getAllItems(ItemGroup)){
                 if(job.fullName.contains(folderName)){
                     AbstractItem<?> jobAbs = AbstractItem.class.cast(job)
                     FolderCredentialsProperty property = job.getProperties().get(FolderCredentialsProperty)
-                    property.getStore().addCredentials(Domain.global(), c)
+                    store = property.getStore()
                 }
             }
         }
+            
+        StandardCredentials current = getCredentialById(c.id,domain,store)
+        if( current == null){
+            log.info("== credentials.groovy - Create credential with id" + c.id)
+            store.addCredentials(domain, c)
+        }
         else {
-            SystemCredentialsProvider.getInstance().getStore().addCredentials(Domain.global(), c)
+            log.info("== credentials.groovy - Update credential with id" + c.id)
+            store.updateCredentials(domain,current,c)
         }
     }
 }
@@ -171,7 +192,6 @@ public class Credentials {
 log.info("== credentials.groovy - Start Configuration");
 String CRED_PATH = System.getenv("CRED_PATH");
 Credentials c = new Credentials(CRED_PATH);
-c.deleteAllCredentials();
 c.createCredentials();
 
 if(new File(CRED_PATH).delete()){
