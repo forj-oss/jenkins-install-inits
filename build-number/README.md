@@ -1,0 +1,1 @@
+Install the plugin next-build-number
