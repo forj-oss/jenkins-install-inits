@@ -42,7 +42,7 @@ SlaveTemplate createSlaveTemplate(Object sconfig){
     sconfig.userData,
     sconfig.numExecutors,
     sconfig.remoteAdmin,
-    new UnixData(null, null, null),
+    new UnixData(sconfig.rootCommandPrefix, sconfig.slaveCommandPrefix, sconfig.sshPort),
     sconfig.jvmopts,
     sconfig.stopOnTerminate,
     sconfig.subnetId,
