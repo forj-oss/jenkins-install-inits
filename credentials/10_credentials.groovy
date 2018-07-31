@@ -170,9 +170,16 @@ public class Credentials {
         if(folderName != null && folderName != ""){     
             for(job in Jenkins.instance.getAllItems(ItemGroup)){
                 if(job.fullName.contains(folderName)){
-                    AbstractItem<?> jobAbs = AbstractItem.class.cast(job)
-                    FolderCredentialsProperty property = job.getProperties().get(FolderCredentialsProperty)
-                    store = property.getStore()
+                    AbstractFolder<?> folderAbs  = AbstractFolder.class.cast(job)
+                    FolderCredentialsProperty property = folderAbs.getProperties().get(FolderCredentialsProperty.class)
+
+                    if(property != null){
+                        store = property.getStore()
+                    }
+                    else{
+                        println('== credentials.groovy - FolderCredentialsProperty object is null')
+                        println('== credentials.groovy - Save to the default store')
+                    } 
                 }
             }
         }
