@@ -1,9 +1,12 @@
 # jenkins-install-inits
 
+## Introduction
+
 This repository contains a collections of Jenkins features that can be installed and maintained in your Jenkins instance.
 It can be implemented in a container context or not.
 
 A feature is a combination of :
+
 - plugins. If a plugin has other plugins dependency, those plugins will be installed automatically.
 - groovy scripts. Those script are executed at jenkins startup to pre-initialize jenkins settings and plugins.
   They are also called on Demand (like GitHub merge Pull request) to update your Jenkins instance at runtime.
@@ -12,7 +15,7 @@ A feature is a combination of :
   (See [Groovy plugin page](https://wiki.jenkins-ci.org/display/JENKINS/Groovy+plugin)
 - shell scripts. Those scripts can install some Jenkins external tools, like maven, mesos library, etc...
 
-# Why this repository could interest me?
+## Why this repository could interest me
 
 Are you searching for a DevOps way to manage your Jenkins instance???
 
@@ -24,47 +27,96 @@ You can read a more detailled discussion about [how to manage Jenkins from a Cod
 In a DevOps context, be able to have a Build factory controlled by code is key.
 If you have any other ideas to make this paradigm a reality for you, share it!!! The approach given here is not necessarily the only correct one. So feel free to discuss it through issues.
 
-# How to use it?
+## How to use it
 
-To use it in your jenkins instances or containers, do the following:
+You need to install a GO binary called jplugins. This tool is static and should work on most of linux system without trouble.
 
-- Download the `jenkins-install.sh` with:
+- Download the `jplugins` with:
 
-Code example:
+    Code example:
 
-    $ curl -sSL -o jenkins-install.sh https://github.com/forj-oss/jenkins-install-inits/raw/master/jenkins-install.sh
-    $ chmod +x jenkins-install.sh
+    ```bash
+    curl -sSL -o jplugins https://github.com/forj-oss/jplugins/releases/download/latest/jplugins
+    chmod +x jplugins
+    ```
 
-- Create a text file `jenkins_features.lst`. Enter a feature name (prefixed by `feature:`) or plugin name (prefixed by `plugin:`) per line.
+### Installing plugins and features on an existing instance, immediately
 
-- Call jenkins-install.sh with your file
+- Create a text file `jplugins.lst`. Provide the list of feature name (prefixed by `feature:`) or plugin name (prefixed by `plugin:`) one per line.
 
-## About `jenkins_features.lst`Where is the Controller box? Do we have one?
+    Ex:
+
+    ```bash
+    $ cat jplugins.lst
+    feature:jenkins-pipeline
+    plugin:embeddable-build-status
+    ```
+
+- Call jplugins with your file
+
+    ```bash
+    ./jplugins install --from-features
+    ```
+
+### Installing plugins and features in 2 steps using jplugins.lock
+
+`jplugins` can be used in 2 steps, in order to prepare plugins/features update offline.
+
+- Out of Jenkins Server: Prepare the list of plugins/features (`jplugins.lock`) to install. Typically, we commit this lock file in GIT.
+- In Jenkins Server: Install plugins/features as defined by jplugins.lock
+
+This section describes how to do it:
+
+1. Prepare list of plugins/features out of Jenkins Server
+    - Create a text file `jplugins.lst`. Provide the list of feature name (prefixed by `feature:`) or plugin name (prefixed by `plugin:`) one per line.
+
+        Ex:
+
+        ```bash
+        $ cat jplugins.lst
+        feature:jenkins-pipeline
+        plugin:embeddable-build-status
+        ```
+
+    - Call jplugins with your file
+
+        ```bash
+        ./jplugins init
+        ```
+2. Install plugins/features as defined by `jplugins.lock`
+
+    ```bash
+    ./jplugins install
+    ```
+
+For detailled options, do ./jplugins --help or read documentation from https://github.com/forj-oss/jplugins
+
+### About `jplugins.lst`
 
 Each line prefixed by `feature:` or `plugin:` will describe an installation task
 
-### plugin:
+#### plugin
+
 When prefixed by `plugins`, the script will download the plugin from `$JENKINS_UC/download/plugins` (JENKINS\_UC=https://updates.jenkins-ci.org) to
 `$JENKINS_HOME/ref/plugins`
 
 Plugins dependencies are automatically downloaded.
 
-### feature:
+#### feature
+
 When prefixed by `feature:`, the script with download a feature description file.
 This file defines :
+
 - The name of groovy scripts to install under `$JENKINS_HOME/ref/groovy.init.d`. Identified with `groovy:`
 - Plugins to install. Plugins dependencies are automatically downloaded. Identified with `plugin:`
-- shell scripts to execute some OS/container side installation, like some libraries/files (yum/apt-get/dnf/...). Identified with `shell:`
 
 Example:
 
-    $ jenkins-install.sh jenkins_features.lst
+    $ jplugins install --from-features
 
-By default, it will install groovy code and plugins from listed script in `$JENKINS_HOME/ref/...`. You can add a different destination path if you need.
+For detailled options, do ./jplugins --help or read documentation from https://github.com/forj-oss/jplugins
 
-    $ jenkins-install.sh jenkins_features.lst /home/jenkins
-
-# Contribute to this repo
+## Contribute to this repo
 
 If you have developed some groovy/shell scripts that can interest any other jenkins users, I would suggest you to contribute to this repo.
 
