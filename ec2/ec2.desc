@@ -1,2 +1,2 @@
 plugin:ec2
-groovy:ec2
+groovy:ec2:1.40.1
